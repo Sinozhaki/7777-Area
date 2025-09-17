@@ -302,13 +302,22 @@
             }
             
             function populateReferralFilter(data) {
-                // FIX: Gunakan .trim() untuk menghapus spasi dan memastikan nilai unik
-                const referrals = [...new Set(data.map(item => item.referral.trim()))].sort();
-                referralFilter.innerHTML = '<option value="all">Semua Referral</option>';
-                referrals.forEach(ref => {
-                    if(ref) { 
-                        referralFilter.innerHTML += `<option value="${ref}">${ref}</option>`;
+                const referralCounts = {};
+                data.forEach(item => {
+                    if (item.referral) {
+                        const ref = item.referral.trim();
+                        if (ref) {
+                            referralCounts[ref] = (referralCounts[ref] || 0) + 1;
+                        }
                     }
+                });
+
+                referralFilter.innerHTML = `<option value="all">Semua Referral (${data.length})</option>`;
+                
+                const sortedReferrals = Object.keys(referralCounts).sort();
+
+                sortedReferrals.forEach(ref => {
+                    referralFilter.innerHTML += `<option value="${ref}">${ref} (${referralCounts[ref]})</option>`;
                 });
             }
 
@@ -317,8 +326,7 @@
                 let filteredData = data;
 
                 if (referralFilterValue !== 'all') {
-                    // FIX: Gunakan .trim() saat membandingkan untuk konsistensi
-                    filteredData = filteredData.filter(item => item.referral.trim() === referralFilterValue);
+                    filteredData = filteredData.filter(item => item.referral && item.referral.trim() === referralFilterValue);
                 }
 
                 if (emailTerm) {
