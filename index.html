@@ -152,9 +152,17 @@
             <div id="toast-message" class="fixed top-5 right-5 p-4 rounded-lg text-white transition-opacity duration-300 opacity-0 z-50"></div>
 
             <div id="tabel-view" class="view-container w-full h-full flex flex-col">
-                <div class="relative w-full max-w-md mx-auto mb-4 px-2">
-                    <input type="text" id="search-input" placeholder="Cari berdasarkan email..." class="w-full pl-10 pr-4 py-2 text-sm border border-slate-300 rounded-full bg-white/50 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm">
-                    <i class="fas fa-search absolute left-6 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <div class="flex flex-col sm:flex-row gap-2 max-w-md mx-auto mb-4 px-2 w-full">
+                    <div class="relative flex-grow">
+                        <input type="text" id="search-input" placeholder="Cari email..." class="w-full pl-10 pr-4 py-2 text-sm border border-slate-300 rounded-full bg-white/50 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    </div>
+                    <div class="relative flex-shrink-0">
+                        <select id="referral-filter" class="w-full sm:w-auto pl-4 pr-8 py-2 text-sm border border-slate-300 rounded-full bg-white/50 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm appearance-none">
+                            <!-- Opsi akan diisi oleh JavaScript -->
+                        </select>
+                         <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                    </div>
                 </div>
                 <div id="card-container" class="flex-grow pr-2 -mr-2 space-y-4"></div>
             </div>
@@ -171,17 +179,13 @@
                         <input type="tel" id="whatsapp" class="text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="08123456789" required>
                     </div>
                     <div>
-                        <label for="referral" class="block mb-2 text-sm font-medium">Referral</label>
-                        <select id="referral" class="text-sm rounded-lg block w-full p-2.5">
-                            <option>goongranca@gmail.com</option> <option>Source B</option> <option>Source C</option> <option>Campaign X</option>
-                        </select>
+                        <label for="referral" class="block mb-2 text-sm font-medium">Referral (Custom)</label>
+                        <input type="text" id="referral" class="text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="Masukkan kode atau nama referral" required>
                     </div>
-                    <div>
+                    <div class="hidden">
                         <label for="kategori" class="block mb-2 text-sm font-medium">Kategori Akun</label>
                         <select id="kategori" class="text-sm rounded-lg block w-full p-2.5">
-                            <option value="Running">Running</option>
-                            <option value="Unrestrict">Unrestrict</option>
-                            <option value="Restric">Restric</option>
+                            <option value="Running" selected>Running</option>
                         </select>
                     </div>
                     <div class="flex gap-4">
@@ -219,6 +223,7 @@
                 <input type="password" id="password-input" class="text-sm rounded-lg block w-full p-2.5" required>
                 <div id="password-error"></div>
                 <button type="submit" class="mt-4 w-full text-white bg-blue-600 hover:bg-blue-700 font-bold rounded-lg text-sm px-5 py-2.5 text-center">Masuk</button>
+                <button type="button" id="password-back-btn" class="mt-2 w-full text-slate-700 bg-slate-200 hover:bg-slate-300 font-bold rounded-lg text-sm px-5 py-2.5 text-center">Kembali</button>
             </form>
         </div>
     </div>
@@ -239,11 +244,11 @@
             const adminView = document.getElementById('admin-view');
             const cardContainer = document.getElementById('card-container');
             const searchInput = document.getElementById('search-input');
+            const referralFilter = document.getElementById('referral-filter');
             const toastMessage = document.getElementById('toast-message');
             const adminForm = document.getElementById('admin-form');
             const submitBtn = document.getElementById('submit-btn');
 
-            // Elemen Peringatan & Password
             const warningOverlay = document.getElementById('warning-overlay');
             const warningMessage = document.getElementById('warning-message');
             const warningOkBtn = document.getElementById('warning-ok-btn');
@@ -253,7 +258,7 @@
             let isAdminUnlocked = false;
 
             const weekSelect = document.getElementById('week');
-            for (let i = 20; i <= 100; i++) weekSelect.innerHTML += `<option value="${i}">W ${i}</option>`;
+            for (let i = 1; i <= 100; i++) weekSelect.innerHTML += `<option value="${i}">W ${i}</option>`;
             const daySelect = document.getElementById('day');
             for (let i = 1; i <= 6; i++) daySelect.innerHTML += `<option value="${i}">D ${i}</option>`;
 
@@ -296,18 +301,36 @@
                 }
             }
             
-            function renderCards(data, filter = '') {
-                const searchTerm = filter.toLowerCase();
-                const filteredData = data.filter(item => 
-                    item.email.toLowerCase().includes(searchTerm)
-                );
+            function populateReferralFilter(data) {
+                // FIX: Gunakan .trim() untuk menghapus spasi dan memastikan nilai unik
+                const referrals = [...new Set(data.map(item => item.referral.trim()))].sort();
+                referralFilter.innerHTML = '<option value="all">Semua Referral</option>';
+                referrals.forEach(ref => {
+                    if(ref) { 
+                        referralFilter.innerHTML += `<option value="${ref}">${ref}</option>`;
+                    }
+                });
+            }
+
+            function renderCards(data, emailFilter = '', referralFilterValue = 'all') {
+                const emailTerm = emailFilter.toLowerCase();
+                let filteredData = data;
+
+                if (referralFilterValue !== 'all') {
+                    // FIX: Gunakan .trim() saat membandingkan untuk konsistensi
+                    filteredData = filteredData.filter(item => item.referral.trim() === referralFilterValue);
+                }
+
+                if (emailTerm) {
+                    filteredData = filteredData.filter(item => 
+                        item.email.toLowerCase().includes(emailTerm)
+                    );
+                }
 
                 cardContainer.innerHTML = '';
 
                 if (filteredData.length === 0) {
-                    cardContainer.innerHTML = filter 
-                        ? `<p class="text-center p-8 text-slate-500">Email "${filter}" tidak ditemukan.</p>`
-                        : `<p class="text-center p-8 text-slate-500">Belum ada data.</p>`;
+                    cardContainer.innerHTML = `<p class="text-center p-8 text-slate-500">Data tidak ditemukan.</p>`;
                     return;
                 }
 
@@ -361,7 +384,8 @@
                     const response = await fetch(`${JSONBIN_URL}/latest`, { headers: { 'X-Master-Key': JSONBIN_API_KEY } });
                     if (!response.ok && response.status !== 404) throw new Error(`HTTP error! status: ${response.status}`);
                     allData = (response.status === 404) ? [] : (await response.json()).record.data || [];
-                    renderCards(allData, searchInput.value);
+                    populateReferralFilter(allData);
+                    renderCards(allData, searchInput.value, referralFilter.value);
                 } catch (error) {
                     console.error("Error fetching data:", error);
                     allData = [];
@@ -382,7 +406,8 @@
                     
                     showToast(`Data berhasil ${action}!`, false);
                     allData = data;
-                    renderCards(allData, searchInput.value);
+                    populateReferralFilter(allData);
+                    renderCards(allData, searchInput.value, referralFilter.value);
                     adminForm.reset();
                 } catch (error) {
                     console.error('Error saving data:', error);
@@ -392,10 +417,10 @@
                 }
             }
 
-            // --- Logika Submit dengan Pengecekan Duplikat ---
             adminForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const emailInput = document.getElementById('email').value.trim();
+                const referralInput = document.getElementById('referral').value.trim();
 
                 const isDuplicate = allData.some(item => item.email.toLowerCase() === emailInput.toLowerCase());
 
@@ -409,8 +434,8 @@
                     timestamp: new Date().toISOString(),
                     email: emailInput,
                     whatsapp: document.getElementById('whatsapp').value,
-                    referral: document.getElementById('referral').value,
-                    kategori: document.getElementById('kategori').value,
+                    referral: referralInput,
+                    kategori: "Running",
                     week: document.getElementById('week').value,
                     day: document.getElementById('day').value,
                 };
@@ -418,17 +443,18 @@
                 await saveData(updatedData);
             });
             
-            // Event Listeners Utama
             tabelBtn.addEventListener('click', () => switchView('tabel'));
             adminBtn.addEventListener('click', () => switchView('admin'));
             logoutBtn.addEventListener('click', () => switchView('tabel'));
-            searchInput.addEventListener('input', () => renderCards(allData, searchInput.value));
+            searchInput.addEventListener('input', () => renderCards(allData, searchInput.value, referralFilter.value));
+            referralFilter.addEventListener('change', () => renderCards(allData, searchInput.value, referralFilter.value));
             warningOkBtn.addEventListener('click', () => warningOverlay.classList.remove('visible'));
 
-            // Password Prompt Logic
             const passwordForm = document.getElementById('password-form');
             const passwordInput = document.getElementById('password-input');
             const passwordError = document.getElementById('password-error');
+            const passwordBackBtn = document.getElementById('password-back-btn');
+            
             passwordForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 if (passwordInput.value === ADMIN_PASSWORD) {
@@ -445,6 +471,10 @@
                         { transform: 'translateX(10px)' }, { transform: 'translateX(0)' }
                     ], { duration: 500, easing: 'ease-in-out' });
                 }
+            });
+
+            passwordBackBtn.addEventListener('click', () => {
+                passwordOverlay.classList.remove('visible');
             });
             
             fetchData();
