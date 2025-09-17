@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refferer 7777 Area</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        /* --- Tema Light Aurora --- */
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden;
+            background-color: #F7F9FC;
+            color: #1A202C;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .aurora-background {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .aurora-item {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.15;
+        }
+
+        .aurora-item:nth-child(1) {
+            width: 600px; height: 600px;
+            background: #5E9BFF;
+            top: -200px; left: -200px;
+            animation: move-aurora-1 20s infinite alternate ease-in-out;
+        }
+        .aurora-item:nth-child(2) {
+            width: 500px; height: 500px;
+            background: #FF77C7;
+            bottom: -150px; right: -150px;
+            animation: move-aurora-2 23s infinite alternate ease-in-out;
+        }
+         .aurora-item:nth-child(3) {
+            width: 400px; height: 400px;
+            background: #40E0D0;
+            bottom: 100px; left: 100px;
+            animation: move-aurora-3 25s infinite alternate ease-in-out;
+        }
+
+        @keyframes move-aurora-1 { from { transform: translate(0, 0) rotate(0deg); } to { transform: translate(200px, 100px) rotate(90deg); } }
+        @keyframes move-aurora-2 { from { transform: translate(0, 0) rotate(0deg); } to { transform: translate(-150px, -50px) rotate(120deg); } }
+        @keyframes move-aurora-3 { from { transform: translate(0, 0) rotate(0deg); } to { transform: translate(50px, -150px) rotate(60deg); } }
+
+        .font-title { font-family: 'Jost', sans-serif; }
+        .content-container {
+            position: relative; z-index: 1; display: flex; justify-content: center;
+            align-items: center; height: 100vh; text-align: center; padding: 1rem;
+        }
+        .main-card {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            width: 90%; max-width: 600px;
+            height: 85vh; max-height: 700px;
+            padding: 2rem; border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            display: flex; flex-direction: column; align-items: center; gap: 1rem;
+        }
+        .view-container { overflow-y: auto; width: 100%; }
+        .view-container::-webkit-scrollbar { width: 6px; }
+        .view-container::-webkit-scrollbar-track { background: transparent; }
+        .view-container::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
+        
+        .light-glass-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.4));
+            border-radius: 20px;
+            padding: 1.25rem 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .light-glass-card:hover {
+             transform: translateY(-5px);
+             box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .switch-bg { background-color: #E2E8F0; }
+        .switch-btn-active { background-color: #FFFFFF; color: #1A202C; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .switch-btn-inactive { color: #4A5568; }
+
+        .admin-view input, .admin-view select, .admin-view textarea {
+            background-color: #F7F9FC;
+            border: 1px solid #CBD5E1;
+            color: #1A202C;
+        }
+        .admin-view input::placeholder, .admin-view textarea::placeholder { color: #A0AEC0; }
+        .admin-view label { color: #4A5568; }
+
+        #password-prompt-overlay, #warning-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(31, 41, 55, 0.5);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            z-index: 50; display: flex;
+            justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        }
+        #password-prompt-overlay.visible, #warning-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .prompt-box {
+            background: #FFFFFF; border: 1px solid #E2E8F0;
+            padding: 2rem; border-radius: 16px; width: 100%; max-width: 320px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transform: scale(0.95); transition: transform 0.3s;
+        }
+        #password-prompt-overlay.visible .prompt-box,
+        #warning-overlay.visible .prompt-box {
+            transform: scale(1);
+        }
+        #password-error {
+            margin-top: 0.5rem; color: #E53E3E; font-size: 0.875rem; height: 1.25rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="aurora-background">
+        <div class="aurora-item"></div>
+        <div class="aurora-item"></div>
+        <div class="aurora-item"></div>
+    </div>
+
+    <div class="content-container">
+        <div class="main-card">
+            <h1 class="font-title text-2xl sm:text-3xl font-bold text-slate-800">Refferer 7777</h1>
+
+            <button id="logout-btn" title="Keluar dari Mode Admin" class="hidden absolute top-4 right-4 h-10 w-10 bg-slate-200 text-slate-600 rounded-full hover:bg-slate-300 transition-colors">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+
+            <div class="p-1 flex switch-bg rounded-full w-full max-w-xs">
+                <button id="tabel-btn" class="w-1/2 py-2 px-4 rounded-full switch-btn-active transition-all duration-300 font-bold text-sm">Tabel</button>
+                <button id="admin-btn" class="w-1/2 py-2 px-4 rounded-full switch-btn-inactive transition-all duration-300 font-medium text-sm">Admin</button>
+            </div>
+
+            <div id="toast-message" class="fixed top-5 right-5 p-4 rounded-lg text-white transition-opacity duration-300 opacity-0 z-50"></div>
+
+            <div id="tabel-view" class="view-container w-full h-full flex flex-col">
+                <div class="relative w-full max-w-md mx-auto mb-4 px-2">
+                    <input type="text" id="search-input" placeholder="Cari berdasarkan email..." class="w-full pl-10 pr-4 py-2 text-sm border border-slate-300 rounded-full bg-white/50 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm">
+                    <i class="fas fa-search absolute left-6 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                </div>
+                <div id="card-container" class="flex-grow pr-2 -mr-2 space-y-4"></div>
+            </div>
+
+            <div id="admin-view" class="admin-view view-container w-full h-full text-left pr-2 -mr-2 hidden">
+                 <form id="admin-form" class="space-y-4 max-w-md mx-auto">
+                    <h2 class="text-xl font-bold text-slate-700 text-center">Tambah Data Baru</h2>
+                    <div>
+                        <label for="email" class="block mb-2 text-sm font-medium">Email</label>
+                        <input type="email" id="email" class="text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="user@example.com" required>
+                    </div>
+                    <div>
+                        <label for="whatsapp" class="block mb-2 text-sm font-medium">No. WhatsApp</label>
+                        <input type="tel" id="whatsapp" class="text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="08123456789" required>
+                    </div>
+                    <div>
+                        <label for="referral" class="block mb-2 text-sm font-medium">Referral</label>
+                        <select id="referral" class="text-sm rounded-lg block w-full p-2.5">
+                            <option>goongranca@gmail.com</option> <option>Source B</option> <option>Source C</option> <option>Campaign X</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="kategori" class="block mb-2 text-sm font-medium">Kategori Akun</label>
+                        <select id="kategori" class="text-sm rounded-lg block w-full p-2.5">
+                            <option value="Running">Running</option>
+                            <option value="Unrestrict">Unrestrict</option>
+                            <option value="Restric">Restric</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="w-1/2">
+                            <label for="week" class="block mb-2 text-sm font-medium">Week (W)</label>
+                            <select id="week" class="text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"></select>
+                        </div>
+                        <div class="w-1/2">
+                            <label for="day" class="block mb-2 text-sm font-medium">Day (D)</label>
+                            <select id="day" class="text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"></select>
+                        </div>
+                    </div>
+                    <button type="submit" id="submit-btn" class="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-bold rounded-lg text-sm px-5 py-3 text-center transition-colors">
+                        Tambah Data
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay untuk Peringatan Duplikat -->
+    <div id="warning-overlay">
+        <div class="prompt-box text-center">
+            <h2 class="text-lg font-bold text-yellow-500 mb-2">Peringatan</h2>
+            <p id="warning-message" class="text-slate-600 mb-4"></p>
+            <button id="warning-ok-btn" class="w-full text-white bg-yellow-500 hover:bg-yellow-600 font-bold rounded-lg text-sm px-5 py-2.5 text-center">OK</button>
+        </div>
+    </div>
+
+    <!-- Overlay untuk Password -->
+    <div id="password-prompt-overlay">
+        <div class="prompt-box">
+            <form id="password-form">
+                <label for="password-input" class="block mb-4 text-sm font-bold text-slate-700">Masukkan Sandi Admin</label>
+                <input type="password" id="password-input" class="text-sm rounded-lg block w-full p-2.5" required>
+                <div id="password-error"></div>
+                <button type="submit" class="mt-4 w-full text-white bg-blue-600 hover:bg-blue-700 font-bold rounded-lg text-sm px-5 py-2.5 text-center">Masuk</button>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const JSONBIN_API_KEY = '$2a$10$CyEgkHrw6xtwHt.RE3ZqEulgvcK5yzSmlYJmn.aRA23csA9a8u/.2';
+            const JSONBIN_BIN_ID = '68c9791f43b1c97be945093d';
+            const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+            const ADMIN_PASSWORD = "4you";
+            
+            const mainCard = document.querySelector('.main-card');
+            const tabelBtn = document.getElementById('tabel-btn');
+            const adminBtn = document.getElementById('admin-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            const tabelView = document.getElementById('tabel-view');
+            const adminView = document.getElementById('admin-view');
+            const cardContainer = document.getElementById('card-container');
+            const searchInput = document.getElementById('search-input');
+            const toastMessage = document.getElementById('toast-message');
+            const adminForm = document.getElementById('admin-form');
+            const submitBtn = document.getElementById('submit-btn');
+
+            // Elemen Peringatan & Password
+            const warningOverlay = document.getElementById('warning-overlay');
+            const warningMessage = document.getElementById('warning-message');
+            const warningOkBtn = document.getElementById('warning-ok-btn');
+            const passwordOverlay = document.getElementById('password-prompt-overlay');
+
+            let allData = [];
+            let isAdminUnlocked = false;
+
+            const weekSelect = document.getElementById('week');
+            for (let i = 20; i <= 100; i++) weekSelect.innerHTML += `<option value="${i}">W ${i}</option>`;
+            const daySelect = document.getElementById('day');
+            for (let i = 1; i <= 6; i++) daySelect.innerHTML += `<option value="${i}">D ${i}</option>`;
+
+            function showToast(message, isError = false) {
+                toastMessage.textContent = message;
+                toastMessage.className = `fixed top-5 right-5 p-4 rounded-lg text-white transition-all duration-300 z-50 ${isError ? 'bg-red-500' : 'bg-green-500'} shadow-lg`;
+                toastMessage.style.opacity = 1;
+                setTimeout(() => { toastMessage.style.opacity = 0; }, 3000);
+            }
+
+            function showWarning(message) {
+                warningMessage.textContent = message;
+                warningOverlay.classList.add('visible');
+            }
+
+            function switchView(view) {
+                if (view === 'tabel') {
+                    isAdminUnlocked = false; 
+                    tabelView.classList.remove('hidden');
+                    adminView.classList.add('hidden');
+                    logoutBtn.classList.add('hidden');
+                    tabelBtn.classList.add('switch-btn-active');
+                    tabelBtn.classList.remove('switch-btn-inactive');
+                    adminBtn.classList.add('switch-btn-inactive');
+                    adminBtn.classList.remove('switch-btn-active');
+                    fetchData();
+                } else if (view === 'admin') {
+                    if (isAdminUnlocked) {
+                        tabelView.classList.add('hidden');
+                        adminView.classList.remove('hidden');
+                        logoutBtn.classList.remove('hidden');
+                        adminBtn.classList.add('switch-btn-active');
+                        adminBtn.classList.remove('switch-btn-inactive');
+                        tabelBtn.classList.add('switch-btn-inactive');
+                        tabelBtn.classList.remove('switch-btn-active');
+                    } else {
+                        passwordOverlay.classList.add('visible');
+                        document.getElementById('password-input').focus();
+                    }
+                }
+            }
+            
+            function renderCards(data, filter = '') {
+                const searchTerm = filter.toLowerCase();
+                const filteredData = data.filter(item => 
+                    item.email.toLowerCase().includes(searchTerm)
+                );
+
+                cardContainer.innerHTML = '';
+
+                if (filteredData.length === 0) {
+                    cardContainer.innerHTML = filter 
+                        ? `<p class="text-center p-8 text-slate-500">Email "${filter}" tidak ditemukan.</p>`
+                        : `<p class="text-center p-8 text-slate-500">Belum ada data.</p>`;
+                    return;
+                }
+
+                filteredData.forEach(item => {
+                    const timeString = item.timestamp ? new Date(item.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':') : '';
+                    const dateDisplay = `W${item.week} D${item.day} · ${timeString}`;
+                    
+                    const isRestricted = item.kategori === 'Restric';
+                    const statusColor = isRestricted ? 'text-red-600' : 'text-green-600';
+                    const kategoriDisplay = isRestricted ? '$1' : '$2';
+
+                    const cardHTML = `
+                        <div class="light-glass-card text-left">
+                            <div class="flex justify-between items-start gap-3">
+                                <div class="min-w-0 flex-1">
+                                    <p class="font-title font-bold text-slate-800 text-base sm:text-lg leading-tight break-words" title="${item.email}">${item.email}</p>
+                                    <p class="text-xs text-slate-500 font-medium mt-1">${dateDisplay}</p>
+                                </div>
+                                <div class="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center ${isRestricted ? 'bg-red-100' : 'bg-green-100'}">
+                                    <p class="font-bold text-base sm:text-lg ${statusColor}">${kategoriDisplay}</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-black/5 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-slate-100 rounded-full">
+                                        <i class="fab fa-whatsapp text-slate-500 text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-slate-500 font-semibold">WHATSAPP</p>
+                                        <p class="text-slate-700 font-medium truncate">${item.whatsapp}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-slate-100 rounded-full">
+                                        <i class="fa fa-user-check text-slate-500 text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-slate-500 font-semibold">REFERRAL</p>
+                                        <p class="text-slate-700 font-medium truncate">${item.referral}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                    cardContainer.innerHTML += cardHTML;
+                });
+            }
+
+            async function fetchData() {
+                cardContainer.innerHTML = '<p class="text-center p-8 text-slate-500">Memuat data...</p>';
+                try {
+                    const response = await fetch(`${JSONBIN_URL}/latest`, { headers: { 'X-Master-Key': JSONBIN_API_KEY } });
+                    if (!response.ok && response.status !== 404) throw new Error(`HTTP error! status: ${response.status}`);
+                    allData = (response.status === 404) ? [] : (await response.json()).record.data || [];
+                    renderCards(allData, searchInput.value);
+                } catch (error) {
+                    console.error("Error fetching data:", error);
+                    allData = [];
+                    cardContainer.innerHTML = `<p class="text-center p-8 text-red-500">Gagal memuat data.</p>`;
+                }
+            }
+            
+            async function saveData(data, action = 'ditambahkan') {
+                submitBtn.disabled = true;
+
+                try {
+                    const putRes = await fetch(JSONBIN_URL, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY, 'X-Bin-Versioning': 'false' },
+                        body: JSON.stringify({ data: data })
+                    });
+                    if (!putRes.ok) throw new Error('Could not save data.');
+                    
+                    showToast(`Data berhasil ${action}!`, false);
+                    allData = data;
+                    renderCards(allData, searchInput.value);
+                    adminForm.reset();
+                } catch (error) {
+                    console.error('Error saving data:', error);
+                    showToast(`Gagal menyimpan data: ${error.message}`, true);
+                } finally {
+                   submitBtn.disabled = false;
+                }
+            }
+
+            // --- Logika Submit dengan Pengecekan Duplikat ---
+            adminForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const emailInput = document.getElementById('email').value.trim();
+
+                const isDuplicate = allData.some(item => item.email.toLowerCase() === emailInput.toLowerCase());
+
+                if (isDuplicate) {
+                    showWarning("Udah di Input datanya bang");
+                    return;
+                }
+                
+                const newData = {
+                    id: Date.now(),
+                    timestamp: new Date().toISOString(),
+                    email: emailInput,
+                    whatsapp: document.getElementById('whatsapp').value,
+                    referral: document.getElementById('referral').value,
+                    kategori: document.getElementById('kategori').value,
+                    week: document.getElementById('week').value,
+                    day: document.getElementById('day').value,
+                };
+                const updatedData = [...allData, newData];
+                await saveData(updatedData);
+            });
+            
+            // Event Listeners Utama
+            tabelBtn.addEventListener('click', () => switchView('tabel'));
+            adminBtn.addEventListener('click', () => switchView('admin'));
+            logoutBtn.addEventListener('click', () => switchView('tabel'));
+            searchInput.addEventListener('input', () => renderCards(allData, searchInput.value));
+            warningOkBtn.addEventListener('click', () => warningOverlay.classList.remove('visible'));
+
+            // Password Prompt Logic
+            const passwordForm = document.getElementById('password-form');
+            const passwordInput = document.getElementById('password-input');
+            const passwordError = document.getElementById('password-error');
+            passwordForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (passwordInput.value === ADMIN_PASSWORD) {
+                    isAdminUnlocked = true;
+                    passwordOverlay.classList.remove('visible');
+                    switchView('admin');
+                } else {
+                    passwordError.textContent = 'Sandi salah. Coba lagi.';
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                    passwordForm.parentElement.animate([
+                        { transform: 'translateX(0)' }, { transform: 'translateX(-10px)' },
+                        { transform: 'translateX(10px)' }, { transform: 'translateX(-10px)' },
+                        { transform: 'translateX(10px)' }, { transform: 'translateX(0)' }
+                    ], { duration: 500, easing: 'ease-in-out' });
+                }
+            });
+            
+            fetchData();
+        });
+    </script>
+</body>
+</html>
+
