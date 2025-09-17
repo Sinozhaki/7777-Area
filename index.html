@@ -101,7 +101,6 @@
         .admin-view input::placeholder { color: #A0AEC0; }
         .admin-view label { color: #4A5568; }
 
-        /* --- Gaya Otentikasi Sidik Jari --- */
         #fingerprint-overlay, #warning-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background-color: rgba(31, 41, 55, 0.5);
@@ -131,7 +130,6 @@
         }
         #fingerprint-icon.scanning { color: #3b82f6; }
         #fingerprint-icon.success { color: #22c55e; }
-        #fingerprint-icon.fail { color: #ef4444; }
         .scan-line {
             position: absolute;
             top: 0; left: 50%;
@@ -174,9 +172,24 @@
             <div id="toast-message" class="fixed top-5 right-5 p-4 rounded-lg text-white transition-opacity duration-300 opacity-0 z-50"></div>
 
             <div id="tabel-view" class="view-container w-full h-full flex flex-col">
-                <div class="relative w-full max-w-md mx-auto mb-4 px-2">
-                    <input type="text" id="search-input" placeholder="Cari berdasarkan email..." class="w-full pl-10 pr-4 py-2 text-sm border border-slate-300 rounded-full bg-white/50 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm">
-                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <div class="flex flex-col sm:flex-row gap-2 max-w-md mx-auto mb-4 px-2 w-full">
+                    <div class="relative flex-grow">
+                        <input type="text" id="search-input" placeholder="Cari email..." class="w-full pl-10 pr-4 py-2 text-sm border border-slate-300 rounded-full bg-white/50 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    </div>
+                    <div class="relative flex-shrink-0">
+                        <select id="referral-filter" class="w-full sm:w-auto pl-4 pr-8 py-2 text-sm border border-slate-300 rounded-full bg-white/50 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm appearance-none">
+                            <!-- Opsi akan diisi oleh JavaScript -->
+                        </select>
+                         <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                    </div>
+                </div>
+                 <div class="max-w-md mx-auto w-full px-2 mb-4">
+                     <button id="calculate-earning-btn" class="w-full bg-blue-500 text-white font-bold text-sm py-2 rounded-full hover:bg-blue-600 transition-colors shadow">Hitung Earning</button>
+                     <div id="total-earning-container" class="text-center mt-2 bg-white/50 border border-slate-200/80 rounded-2xl p-3 hidden">
+                        <p class="text-sm font-semibold text-slate-500">Total Earning (Filter Aktif)</p>
+                        <p id="total-earning-amount" class="text-2xl font-bold text-slate-800">$0</p>
+                    </div>
                 </div>
                 <div id="card-container" class="flex-grow pr-2 -mr-2 space-y-4"></div>
             </div>
@@ -256,6 +269,10 @@
             const adminView = document.getElementById('admin-view');
             const cardContainer = document.getElementById('card-container');
             const searchInput = document.getElementById('search-input');
+            const referralFilter = document.getElementById('referral-filter');
+            const calculateEarningBtn = document.getElementById('calculate-earning-btn');
+            const totalEarningContainer = document.getElementById('total-earning-container');
+            const totalEarningAmount = document.getElementById('total-earning-amount');
             const toastMessage = document.getElementById('toast-message');
             const adminForm = document.getElementById('admin-form');
             const submitBtn = document.getElementById('submit-btn');
@@ -316,85 +333,113 @@
                 }
             }
             
-            function renderCards(data, filter = '') {
-                // ... (Fungsi renderCards tetap sama)
-                 const searchTerm = filter.toLowerCase();
-                const filteredData = data.filter(item => 
-                    item.email.toLowerCase().includes(searchTerm)
-                );
+            function populateReferralFilter(data) {
+                const referralCounts = {};
+                data.forEach(item => {
+                    if (item.referral) {
+                        const ref = item.referral.trim();
+                        if (ref) {
+                            referralCounts[ref] = (referralCounts[ref] || 0) + 1;
+                        }
+                    }
+                });
 
-                cardContainer.innerHTML = '';
+                referralFilter.innerHTML = `<option value="all">Semua Referral (${data.length})</option>`;
+                
+                const sortedReferrals = Object.keys(referralCounts).sort();
 
-                if (filteredData.length === 0) {
-                    cardContainer.innerHTML = filter 
-                        ? `<p class="text-center p-8 text-slate-500">Email "${filter}" tidak ditemukan.</p>`
-                        : `<p class="text-center p-8 text-slate-500">Belum ada data.</p>`;
-                    return;
+                sortedReferrals.forEach(ref => {
+                    referralFilter.innerHTML += `<option value="${ref}">${ref} (${referralCounts[ref]})</option>`;
+                });
+            }
+            
+            function applyFiltersAndRender() {
+                const emailFilter = searchInput.value.toLowerCase();
+                const referralFilterValue = referralFilter.value;
+                let filteredData = allData;
+
+                if (referralFilterValue !== 'all') {
+                    filteredData = filteredData.filter(item => item.referral && item.referral.trim() === referralFilterValue);
                 }
 
-                filteredData.forEach(item => {
-                    const timeString = item.timestamp ? new Date(item.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':') : '';
-                    const dateDisplay = `W${item.week} D${item.day} · ${timeString}`;
-                    
-                    const isRestricted = item.kategori === 'Restric';
-                    const statusColor = isRestricted ? 'text-red-600' : 'text-green-600';
-                    const kategoriDisplay = isRestricted ? '$1' : '$2';
+                if (emailFilter) {
+                    filteredData = filteredData.filter(item => 
+                        item.email.toLowerCase().includes(emailFilter)
+                    );
+                }
+                
+                renderCards(filteredData);
+                totalEarningContainer.classList.add('hidden'); // Sembunyikan earning setiap filter berubah
+            }
 
-                    const cardHTML = `
-                        <div class="light-glass-card text-left">
-                            <div class="flex justify-between items-start gap-3">
-                                <div class="min-w-0 flex-1">
-                                    <p class="font-title font-bold text-slate-800 text-base sm:text-lg leading-tight break-words" title="${item.email}">${item.email}</p>
-                                    <p class="text-xs text-slate-500 font-medium mt-1">${dateDisplay}</p>
-                                </div>
-                                <div class="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center ${isRestricted ? 'bg-red-100' : 'bg-green-100'}">
-                                    <p class="font-bold text-base sm:text-lg ${statusColor}">${kategoriDisplay}</p>
-                                </div>
-                            </div>
-                            <div class="mt-4 pt-4 border-t border-black/5 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-slate-100 rounded-full">
-                                        <i class="fab fa-whatsapp text-slate-500 text-lg"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-slate-500 font-semibold">WHATSAPP</p>
-                                        <p class="text-slate-700 font-medium truncate">${item.whatsapp}</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-slate-100 rounded-full">
-                                        <i class="fa fa-user-check text-slate-500 text-lg"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-slate-500 font-semibold">REFERRAL</p>
-                                        <p class="text-slate-700 font-medium truncate">${item.referral}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`;
-                    cardContainer.innerHTML += cardHTML;
+            function renderCards(filteredData) {
+                cardContainer.innerHTML = '';
+                if (filteredData.length === 0) {
+                    cardContainer.innerHTML = `<p class="text-center p-8 text-slate-500">Data tidak ditemukan.</p>`;
+                    return;
+                }
+                filteredData.forEach(item => {
+                    cardContainer.innerHTML += createCardHTML(item);
                 });
             }
 
+            function createCardHTML(item) {
+                const timeString = item.timestamp ? new Date(item.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':') : '';
+                const dateDisplay = `W${item.week} D${item.day} · ${timeString}`;
+                const isRestricted = item.kategori === 'Restric';
+                const statusColor = isRestricted ? 'text-red-600' : 'text-green-600';
+                const kategoriDisplay = isRestricted ? '$1' : '$2';
+                return `
+                    <div class="light-glass-card text-left">
+                        <div class="flex justify-between items-start gap-3">
+                            <div class="min-w-0 flex-1">
+                                <p class="font-title font-bold text-slate-800 text-base sm:text-lg leading-tight break-words" title="${item.email}">${item.email}</p>
+                                <p class="text-xs text-slate-500 font-medium mt-1">${dateDisplay}</p>
+                            </div>
+                            <div class="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center ${isRestricted ? 'bg-red-100' : 'bg-green-100'}">
+                                <p class="font-bold text-base sm:text-lg ${statusColor}">${kategoriDisplay}</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-black/5 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-slate-100 rounded-full">
+                                    <i class="fab fa-whatsapp text-slate-500 text-lg"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-500 font-semibold">WHATSAPP</p>
+                                    <p class="text-slate-700 font-medium truncate">${item.whatsapp}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-slate-100 rounded-full">
+                                    <i class="fa fa-user-check text-slate-500 text-lg"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-500 font-semibold">REFERRAL</p>
+                                    <p class="text-slate-700 font-medium truncate">${item.referral}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
             async function fetchData() {
-                // ... (Fungsi fetchData tetap sama)
-                 cardContainer.innerHTML = '<p class="text-center p-8 text-slate-500">Memuat data...</p>';
+                cardContainer.innerHTML = '<p class="text-center p-8 text-slate-500">Memuat data...</p>';
                 try {
                     const response = await fetch(`${JSONBIN_URL}/latest`, { headers: { 'X-Master-Key': JSONBIN_API_KEY } });
                     if (!response.ok && response.status !== 404) throw new Error(`HTTP error! status: ${response.status}`);
                     allData = (response.status === 404) ? [] : (await response.json()).record.data || [];
-                    renderCards(allData, searchInput.value);
+                    populateReferralFilter(allData);
+                    applyFiltersAndRender();
                 } catch (error) {
-                    console.error('Error fetching data:', error);
+                    console.error("Error fetching data:", error);
                     allData = [];
                     cardContainer.innerHTML = `<p class="text-center p-8 text-red-500">Gagal memuat data.</p>`;
                 }
             }
             
             async function saveData(data, action = 'ditambahkan') {
-                // ... (Fungsi saveData tetap sama)
-                 submitBtn.disabled = true;
-
+                submitBtn.disabled = true;
                 try {
                     const putRes = await fetch(JSONBIN_URL, {
                         method: 'PUT',
@@ -405,7 +450,8 @@
                     
                     showToast(`Data berhasil ${action}!`, false);
                     allData = data;
-                    renderCards(allData, searchInput.value);
+                    populateReferralFilter(allData);
+                    applyFiltersAndRender();
                     adminForm.reset();
                 } catch (error) {
                     console.error('Error saving data:', error);
@@ -418,20 +464,18 @@
             adminForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const emailInput = document.getElementById('email').value.trim();
-
+                const referralInput = document.getElementById('referral').value.trim();
                 const isDuplicate = allData.some(item => item.email.toLowerCase() === emailInput.toLowerCase());
-
                 if (isDuplicate) {
                     showWarning("Udah di Input datanya bang");
                     return;
                 }
-                
                 const newData = {
                     id: Date.now(),
                     timestamp: new Date().toISOString(),
                     email: emailInput,
                     whatsapp: document.getElementById('whatsapp').value,
-                    referral: document.getElementById('referral').value.trim(),
+                    referral: referralInput,
                     kategori: "Running",
                     week: document.getElementById('week').value,
                     day: document.getElementById('day').value,
@@ -439,14 +483,43 @@
                 const updatedData = [...allData, newData];
                 await saveData(updatedData);
             });
+
+            calculateEarningBtn.addEventListener('click', () => {
+                const emailFilter = searchInput.value.toLowerCase();
+                const referralFilterValue = referralFilter.value;
+                let filteredData = allData;
+
+                if (referralFilterValue !== 'all') {
+                    filteredData = filteredData.filter(item => item.referral && item.referral.trim() === referralFilterValue);
+                }
+
+                if (emailFilter) {
+                    filteredData = filteredData.filter(item => 
+                        item.email.toLowerCase().includes(emailFilter)
+                    );
+                }
+                
+                const totalEarning = filteredData.reduce((sum, item) => {
+                    return sum + (item.kategori === 'Restric' ? 1 : 2);
+                }, 0);
+
+                totalEarningAmount.textContent = `$${totalEarning}`;
+                totalEarningContainer.classList.remove('hidden');
+            });
             
-            // --- Logika Sidik Jari ---
+            tabelBtn.addEventListener('click', () => switchView('tabel'));
+            adminBtn.addEventListener('click', () => switchView('admin'));
+            logoutBtn.addEventListener('click', () => switchView('tabel'));
+            searchInput.addEventListener('input', applyFiltersAndRender);
+            referralFilter.addEventListener('change', applyFiltersAndRender);
+            warningOkBtn.addEventListener('click', () => warningOverlay.classList.remove('visible'));
+            
+            // Logika Sidik Jari
             function startScan() {
                 fingerprintIcon.className = 'scanning';
                 fingerprintStatus.textContent = 'Memindai...';
-                scanTimeout = setTimeout(completeScan, 1500); // Durasi pemindaian
+                scanTimeout = setTimeout(completeScan, 1500);
             }
-
             function completeScan() {
                 fingerprintIcon.className = 'success';
                 fingerprintStatus.textContent = 'Berhasil!';
@@ -457,25 +530,14 @@
                     resetScan();
                 }, 500);
             }
-
             function cancelScan() {
                 clearTimeout(scanTimeout);
                 resetScan();
             }
-
             function resetScan() {
                  fingerprintIcon.className = '';
                  fingerprintStatus.textContent = 'Sentuh & tahan untuk memindai';
             }
-            
-            // Event Listeners Utama
-            tabelBtn.addEventListener('click', () => switchView('tabel'));
-            adminBtn.addEventListener('click', () => switchView('admin'));
-            logoutBtn.addEventListener('click', () => switchView('tabel'));
-            searchInput.addEventListener('input', () => renderCards(allData, searchInput.value));
-            warningOkBtn.addEventListener('click', () => warningOverlay.classList.remove('visible'));
-            
-            // Event Listeners Sidik Jari
             fingerprintIcon.addEventListener('mousedown', startScan);
             fingerprintIcon.addEventListener('mouseup', cancelScan);
             fingerprintIcon.addEventListener('mouseleave', cancelScan);
